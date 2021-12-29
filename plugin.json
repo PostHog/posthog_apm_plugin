@@ -1,7 +1,7 @@
 {
-    "name": "<TODO: your plugin name>",
+    "name": "PostHog APM Plugin",
     "url": "<TODO: Your Plugin URL here>",
-    "description": "<TODO: Your Plugin description here>",
+    "description": "Calculates performance information using event information from the web sdk",
     "main": "index.js",
     "posthogVersion": ">= 1.25.0",
     "config": [
