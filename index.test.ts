@@ -66,6 +66,7 @@ describe('converting window.performance to APM information', () => {
                 },
             })
         })
+
         it('can processes performance when present', async () => {
             const actual = await processEvent(event)
 
@@ -73,40 +74,78 @@ describe('converting window.performance to APM information', () => {
             expect(actual.properties).not.to.have.property('performance')
         })
 
-        it('can report on DNS lookup time', async () => {
-            const actual = await processEvent(event)
+        const happyPathTestCases = [
+            {
+                measure: 'DNS lookup time',
+                propertyName: '$performance_dnsLookupTime',
+                expected:
+                    navigationTimings[0].domainLookupEnd -
+                    navigationTimings[0].domainLookupStart,
+            },
+            {
+                measure: 'connection time',
+                propertyName: '$performance_connectionTime',
+                expected:
+                    navigationTimings[0].connectEnd -
+                    navigationTimings[0].connectStart,
+            },
+            {
+                measure: 'TLS connection time',
+                propertyName: '$performance_tlsTime',
+                expected:
+                    navigationTimings[0].connectEnd -
+                    navigationTimings[0].secureConnectionStart,
+            },
+            {
+                measure: 'DOM Content Loaded',
+                propertyName: '$performance_domContentLoaded',
+                expected:
+                    navigationTimings[0].domContentLoadedEventEnd -
+                    navigationTimings[0].startTime,
+            },
+            {
+                measure: 'time spent fetching resources',
+                propertyName: '$performance_fetchTime',
+                expected:
+                    navigationTimings[0].responseEnd -
+                    navigationTimings[0].fetchStart,
+            },
+            {
+                measure: 'time to first byte',
+                propertyName: '$performance_timeToFirstByte',
+                expected:
+                    navigationTimings[0].responseStart -
+                    navigationTimings[0].requestStart,
+            },
+            {
+                measure: 'DOM readyState interactive',
+                propertyName: '$performance_domReadyState_interactive',
+                expected:
+                    navigationTimings[0].domInteractive -
+                    navigationTimings[0].startTime,
+            },
+            {
+                measure: 'DOM readyState complete',
+                propertyName: '$performance_domReadyState_complete',
+                expected:
+                    navigationTimings[0].domComplete -
+                    navigationTimings[0].startTime,
+            },
+            {
+                measure: 'page being loaded',
+                propertyName: '$performance_pageLoaded',
+                expected: navigationTimings[0].duration,
+            },
+        ]
 
-            const expected =
-                navigationTimings[0].domainLookupEnd -
-                navigationTimings[0].domainLookupStart
-            expect(actual.properties).to.have.property(
-                '$performance_dnsLookupTime',
-                expected
-            )
-        })
-
-        it('can report on connection time', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].connectEnd -
-                navigationTimings[0].connectStart
-            expect(actual.properties).to.have.property(
-                '$performance_connectionTime',
-                expected
-            )
-        })
-
-        it('can report on TLS connection time', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].connectEnd -
-                navigationTimings[0].secureConnectionStart
-            expect(actual.properties).to.have.property(
-                '$performance_tlsTime',
-                expected
-            )
+        happyPathTestCases.forEach((testCase) => {
+            it(`can report on ${testCase.measure}`, async () => {
+                const actual = await processEvent(event)
+                expect(actual.properties).to.have.property(
+                    testCase.propertyName,
+                    testCase.expected
+                )
+            })
         })
 
         it('can report TLS connection time when not secure', async () => {
@@ -117,76 +156,6 @@ describe('converting window.performance to APM information', () => {
             expect(actual.properties).to.have.property(
                 '$performance_tlsTime',
                 0
-            )
-        })
-
-        it('can report on DNS lookup', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].domContentLoadedEventEnd -
-                navigationTimings[0].startTime
-            expect(actual.properties).to.have.property(
-                '$performance_domContentLoaded',
-                expected
-            )
-        })
-
-        it('can report on time spent fetching resources', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].responseEnd -
-                navigationTimings[0].fetchStart
-            expect(actual.properties).to.have.property(
-                '$performance_fetchTime',
-                expected
-            )
-        })
-
-        it('can report on time to first byte', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].responseStart -
-                navigationTimings[0].requestStart
-            expect(actual.properties).to.have.property(
-                '$performance_timeToFirstByte',
-                expected
-            )
-        })
-
-        it('can report on dom ready state interactive', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].domInteractive -
-                navigationTimings[0].startTime
-            expect(actual.properties).to.have.property(
-                '$performance_domReadyState_interactive',
-                expected
-            )
-        })
-
-        it('can report on dom ready state complete', async () => {
-            const actual = await processEvent(event)
-
-            const expected =
-                navigationTimings[0].domComplete -
-                navigationTimings[0].startTime
-            expect(actual.properties).to.have.property(
-                '$performance_domReadyState_complete',
-                expected
-            )
-        })
-
-        it('can report on page_being_loaded', async () => {
-            const actual = await processEvent(event)
-
-            const expected = navigationTimings[0].duration
-            expect(actual.properties).to.have.property(
-                '$performance_pageLoaded',
-                expected
             )
         })
 
