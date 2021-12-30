@@ -47,7 +47,7 @@ export async function processEvent(event: PluginEvent): Promise<PluginEvent> {
     const navTiming = raw_performance.navigation[0]
     const properties = {
         ...event.properties,
-        $performance_raw: JSON.stringify(raw_performance), // so that the UI doesn't try to draw a giant table on the events and actions page
+        $performance_raw: JSON.stringify(raw_performance), // stringified so that the UI doesn't try to draw a giant table on the events and actions page
     }
 
     const addPerformanceProperty = safePerformancePropertyAddition(
@@ -55,60 +55,7 @@ export async function processEvent(event: PluginEvent): Promise<PluginEvent> {
         navTiming
     )
 
-    addPerformanceProperty(
-        '$performance_domContentLoaded',
-        (nt) => nt.domContentLoadedEventEnd - nt.startTime
-    )
-
-    addPerformanceProperty(
-        '$performance_dnsLookupTime',
-        (nt) => nt.domainLookupEnd - nt.domainLookupStart
-    )
-
-    addPerformanceProperty(
-        '$performance_connectionTime',
-        (nt) => nt.connectEnd - nt.connectStart
-    )
-
-    addPerformanceProperty('$performance_tlsTime', (nt) =>
-        nt.secureConnectionStart > 0
-            ? nt.connectEnd - nt.secureConnectionStart
-            : 0
-    )
-
-    addPerformanceProperty(
-        '$performance_fetchTime',
-        (nt) => nt.responseEnd - nt.fetchStart
-    )
-
-    addPerformanceProperty(
-        '$performance_timeToFirstByte',
-        (nt) => nt.responseStart - nt.requestStart
-    )
-
-    addPerformanceProperty(
-        '$performance_domReadyState_interactive',
-        (nt) => nt.domInteractive - nt.startTime
-    )
-
-    addPerformanceProperty(
-        '$performance_domReadyState_complete',
-        (nt) => nt.domComplete - nt.startTime
-    )
-
     addPerformanceProperty('$performance_pageLoaded', (nt) => nt.duration)
-
-    addPerformanceProperty('$performance_pageSize', (nt) => nt.decodedBodySize)
-
-    addPerformanceProperty(
-        '$performance_compressedPageSize',
-        (nt) => nt.encodedBodySize
-    )
-
-    addPerformanceProperty(
-        '$performance_compressionSaving',
-        (nt) => 1 - nt.encodedBodySize / nt.decodedBodySize
-    )
 
     event.properties = properties
     delete event.properties.$performance
