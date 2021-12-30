@@ -2,6 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
+
+Many thanks to https://nicj.net/navigationtiming-in-practice/ and https://nicj.net/resourcetiming-in-practice/
+
 This is a PostHog plugin template.
 
 The existing sample code adds property `"greeting"` to every event with a configurable value (default: `"Hello world!"`).  
