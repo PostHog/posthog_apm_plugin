@@ -51,7 +51,7 @@ const navigationTimings: PerformanceNavigationTiming[] = [
         type: 'navigate',
         redirectCount: 0,
         toJSON(): any {
-            return JSON.stringify(this)
+            return 'fake stringify'
         },
     },
 ]
@@ -61,7 +61,7 @@ describe('converting window.performance to APM information', () => {
         let event
         beforeEach(() => {
             event = anEvent('$pageview', {
-                performance: {
+                $performance: {
                     navigation: navigationTimings,
                 },
             })
@@ -71,7 +71,7 @@ describe('converting window.performance to APM information', () => {
             const actual = await processEvent(event)
 
             expect(actual.properties).to.have.property('$performance_raw')
-            expect(actual.properties).not.to.have.property('performance')
+            expect(actual.properties).not.to.have.property('$performance')
         })
 
         const happyPathTestCases = [
@@ -150,13 +150,21 @@ describe('converting window.performance to APM information', () => {
 
         it('can report TLS connection time when not secure', async () => {
             // when http or connection is persistent secureConnectionStart is 0
-            event.properties.performance.navigation[0].secureConnectionStart = 0
+            event.properties.$performance.navigation[0].secureConnectionStart = 0
             const actual = await processEvent(event)
 
             expect(actual.properties).to.have.property(
                 '$performance_tlsTime',
                 0
             )
+        })
+
+        it('does not add a key if the measurement is not present', async () => {
+            delete event.properties.$performance.navigation[0][
+                'domainLookupEnd'
+            ]
+            const actual = await processEvent(event)
+            expect(actual).not.to.have.property('$performance_dnsLookupTime')
         })
 
         it('can report on page size', async () => {

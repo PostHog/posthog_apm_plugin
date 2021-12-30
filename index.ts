@@ -19,45 +19,99 @@ interface PerformanceSignals {
     resource: PerformanceResourceTiming[] // timings of resources loaded
 }
 
+function safePerformancePropertyAddition(
+    properties: Record<string, any>,
+    navTiming: PerformanceNavigationTiming
+): (key: string, performanceCalculation: (nt) => number) => void {
+    return (key: string, performanceCalculation: (nt) => number) => {
+        try {
+            properties[key] = performanceCalculation(navTiming)
+        } catch (e) {
+            console.log(`could not add performance key ${key}. ${e}`)
+        }
+    }
+}
+
 export async function processEvent(event: PluginEvent): Promise<PluginEvent> {
     if (event.event !== '$pageview') {
+        console.debug(`event is ${event.event}. not processing`)
         return event
     }
-    if (!event.properties || !event.properties.performance) {
+    if (!event.properties || !event.properties.$performance) {
+        console.debug(`event has no performance info. not processing`)
         return event
     }
 
-    const raw_performance = event.properties.performance as PerformanceSignals
+    const raw_performance = event.properties.$performance as PerformanceSignals
 
     const navTiming = raw_performance.navigation[0]
-    event.properties = {
+    const properties = {
         ...event.properties,
-        $performance_domContentLoaded:
-            navTiming.domContentLoadedEventEnd - navTiming.startTime,
-        $performance_dnsLookupTime:
-            navTiming.domainLookupEnd - navTiming.domainLookupStart,
-        $performance_connectionTime:
-            navTiming.connectEnd - navTiming.connectStart,
-        $performance_tlsTime:
-            navTiming.secureConnectionStart > 0
-                ? navTiming.connectEnd - navTiming.secureConnectionStart
-                : 0,
-        $performance_fetchTime: navTiming.responseEnd - navTiming.fetchStart,
-        $performance_timeToFirstByte:
-            navTiming.responseStart - navTiming.requestStart,
-        $performance_domReadyState_interactive:
-            navTiming.domInteractive - navTiming.startTime,
-        $performance_domReadyState_complete:
-            navTiming.domComplete - navTiming.startTime,
-        $performance_pageLoaded: navTiming.duration,
-        $performance_pageSize: navTiming.decodedBodySize,
-        $performance_compressedPageSize: navTiming.encodedBodySize,
-        $performance_compressionSaving:
-            1 - navTiming.encodedBodySize / navTiming.decodedBodySize,
-        $performance_raw: raw_performance,
+        $performance_raw: JSON.stringify(raw_performance), // so that the UI doesn't try to draw a giant table on the events and actions page
     }
 
-    delete event.properties.performance
+    const addPerformanceProperty = safePerformancePropertyAddition(
+        properties,
+        navTiming
+    )
 
+    addPerformanceProperty(
+        '$performance_domContentLoaded',
+        (nt) => nt.domContentLoadedEventEnd - nt.startTime
+    )
+
+    addPerformanceProperty(
+        '$performance_dnsLookupTime',
+        (nt) => nt.domainLookupEnd - nt.domainLookupStart
+    )
+
+    addPerformanceProperty(
+        '$performance_connectionTime',
+        (nt) => nt.connectEnd - nt.connectStart
+    )
+
+    addPerformanceProperty('$performance_tlsTime', (nt) =>
+        nt.secureConnectionStart > 0
+            ? nt.connectEnd - nt.secureConnectionStart
+            : 0
+    )
+
+    addPerformanceProperty(
+        '$performance_fetchTime',
+        (nt) => nt.responseEnd - nt.fetchStart
+    )
+
+    addPerformanceProperty(
+        '$performance_timeToFirstByte',
+        (nt) => nt.responseStart - nt.requestStart
+    )
+
+    addPerformanceProperty(
+        '$performance_domReadyState_interactive',
+        (nt) => nt.domInteractive - nt.startTime
+    )
+
+    addPerformanceProperty(
+        '$performance_domReadyState_complete',
+        (nt) => nt.domComplete - nt.startTime
+    )
+
+    addPerformanceProperty('$performance_pageLoaded', (nt) => nt.duration)
+
+    addPerformanceProperty('$performance_pageSize', (nt) => nt.decodedBodySize)
+
+    addPerformanceProperty(
+        '$performance_compressedPageSize',
+        (nt) => nt.encodedBodySize
+    )
+
+    addPerformanceProperty(
+        '$performance_compressionSaving',
+        (nt) => 1 - nt.encodedBodySize / nt.decodedBodySize
+    )
+
+    event.properties = properties
+    delete event.properties.$performance
+    console.debug(`processed pageview event ${event.uuid}`)
     return event
 }
