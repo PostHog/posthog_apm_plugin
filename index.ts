@@ -19,19 +19,6 @@ interface PerformanceSignals {
     resource: PerformanceResourceTiming[] // timings of resources loaded
 }
 
-function safePerformancePropertyAddition(
-    properties: Record<string, any>,
-    navTiming: PerformanceNavigationTiming
-): (key: string, performanceCalculation: (nt) => number) => void {
-    return (key: string, performanceCalculation: (nt) => number) => {
-        try {
-            properties[key] = performanceCalculation(navTiming)
-        } catch (e) {
-            console.log(`could not add performance key ${key}. ${e}`)
-        }
-    }
-}
-
 export async function processEvent(event: PluginEvent): Promise<PluginEvent> {
     if (event.event !== '$pageview') {
         console.debug(`event is ${event.event}. not processing`)
@@ -47,15 +34,17 @@ export async function processEvent(event: PluginEvent): Promise<PluginEvent> {
     const navTiming = raw_performance.navigation[0]
     const properties = {
         ...event.properties,
-        $performance_raw: JSON.stringify(raw_performance), // stringified so that the UI doesn't try to draw a giant table on the events and actions page
+        // stringified so that the UI doesn't try to draw a giant table on the events and actions page
+        $performance_raw: JSON.stringify(raw_performance),
     }
 
-    const addPerformanceProperty = safePerformancePropertyAddition(
-        properties,
-        navTiming
-    )
-
-    addPerformanceProperty('$performance_pageLoaded', (nt) => nt.duration)
+    try {
+        properties['$performance_pageLoaded'] = navTiming.duration
+    } catch (e) {
+        console.log(
+            `could not add performance key '$performance_pageLoaded. ${e}`
+        )
+    }
 
     event.properties = properties
     delete event.properties.$performance
