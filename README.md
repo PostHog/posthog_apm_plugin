@@ -10,6 +10,20 @@ This plugin processes that raw data into useful performance information
 
 The processing is done here rather than in the SDK so that new transformations and extractions can be added without needing to release a new version of the SDK
 
+```mermaid
+sequenceDiagram
+    actor SDK
+    actor Plugin
+    actor Django
+    actor Queries
+    actor APM Waterfall
+    SDK->>Plugin: PageView with<br/> $performance
+    Plugin->>Django: PageView with <br/>$performance_pageLoad<br/> and $performance_raw
+    note right of Plugin: processing at plugin server <br/>means we only have to change the SDK <br/>if we discover we aren't <br/>gathering enough information
+    Django->>Queries: can use <br/>$performance_pageLoad
+    Django->>APM Waterfall: can use $performance_raw
+```
+
 # References 
 
 Many thanks to https://nicj.net/navigationtiming-in-practice/ and https://nicj.net/resourcetiming-in-practice/ for excellent context in how to use browser performance information
