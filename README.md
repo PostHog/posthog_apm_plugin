@@ -2,6 +2,13 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
+## Deprecated and Archived
+
+We changed the SDK so that this plugin was not necessary
+
+--------
+
+
 When the PostHog JS SDK has the capture performance config active it sends the browser's performance timings in the `$performance` field for `$pageview` events
 
 This plugin processes that raw data into useful performance information
